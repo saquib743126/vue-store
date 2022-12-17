@@ -4,47 +4,98 @@
 		<i  class="ri-arrow-left-line"></i>
 	</router-link>
 </div>
-<div class="card">
+<div v-if="product" class="card">
 	<div class="card-image">
-		<img src="a.jpeg" alt="">
+		<img :src="product.image" alt="">
 	</div>
 	<div class="card-text">
 		<div class="card-title">
-			Aelomart <br>
-			Color Black Men Round Neck White,Maroon T-Shirt
-			<img src="flipkart2.png" alt="">
+			{{ product.brand }} <br>
+			{{ product.title }}
+			<img src="/assets/img/flipkart2.png" alt="">
 		</div>
 		<div class=" card-price">
-			&#x20B9;299
-			<span class="price-mrp">&#x20B9;1499 </span> <span class="discount">(80% off)</span>
+			&#x20B9;{{ product.price_sp }}
+			<span class="price-mrp">&#x20B9;{{ product.price_mp }} </span> <span class="discount">(80% off)</span>
 		</div>
 		
 		<div class="Size">
-			Size S,M,L,XL,XXL
+			Size 
+			<span v-for="size in product.sizes">{{ size }}</span>
 		</div>
 		<div class="card-actions"> 
 			<h6 class="qt-title">Quantity</h6>
 			<div class="card-actions-button">
-				<button class="qt-button" disabled=""> – </button>
+				<button @click="decreaseQty" class="qt-button"> – </button>
 				<div class="qt-box">
-					<input type="text" class="qt-no" disabled="" value="1">
+					<input v-model="qty" type="text" class="qt-no" readonly>
 				</div>
-				<button class="qt-button" disabled=""> + </button>
+				<button @click="increaseQty" class="qt-button"> + </button>
 			</div>
 		</div>
 		<div class="card-button">
-			<button class="card-add">Add to Cart</button>
+			<button @click="addItemInCart" class="card-add">Add to Cart</button>
 			<button class="card-buy">Buy Know</button>
 		</div>
 	</div>
 </div>
+<div v-else>
+	<p>Product with ID {{ productId }} not found.</p>
+</div>
 </template>
 <script>
+import APIDATA from '../../../data.json';
+
+import { CartService } from '../../services/CartService.js';
+
 export default {
+	emits: ['cart-updated'],
 	data() {
 		return {
-			// 
+			productId: null,
+			product: null,
+			qty: 1,
 		}
+	},
+
+	methods: {
+		increaseQty() {
+			this.qty++;
+		},
+
+		decreaseQty() {
+			if (this.qty > 1) {
+				this.qty--;
+			}
+		},
+
+		addItemInCart() {
+			const cartItem = {
+				product: this.product,
+				qty: this.qty,
+			}
+
+			CartService.addItem(cartItem);
+
+			this.$emit('cart-updated');
+		},
+	},
+
+	mounted() {
+		this.productId = this.$route.params.id;
+		
+		let productInCart = CartService.getQtyOfItemById(this.productId);
+		console.log(productInCart);
+		if (productInCart) {
+			this.qty = productInCart.qty;
+		}
+
+		
+		APIDATA.products.forEach((product) => {
+			if (product.id == this.productId) {
+				this.product = product;
+			}
+		});
 	}
 }
 </script>
